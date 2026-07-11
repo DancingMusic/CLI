@@ -32,6 +32,14 @@ export async function validateManifest(cwd = process.cwd()): Promise<ValidationR
     if (/(?:@|\/)(?:main|master|latest)(?:\/|$)/i.test(typed.artifact.url)) {
       errors.push("artifact.url must reference an immutable version, not main/master/latest");
     }
+    for (const mirror of typed.artifact.mirrors ?? []) {
+      if (/(?:@|\/)(?:main|master|latest)(?:\/|$)/i.test(mirror.url)) {
+        errors.push(`artifact mirror (${mirror.region}) must reference an immutable version`);
+      }
+    }
+    if ((typed.artifact.mirrors?.length ?? 0) > 0 && !typed.artifact.integrity) {
+      errors.push("artifact.integrity is required when mirrors are declared");
+    }
     return { valid: errors.length === 0, errors, manifest: typed };
   } catch (error) {
     return { valid: false, errors: [error instanceof Error ? error.message : String(error)] };
@@ -58,7 +66,14 @@ export function buildStoreRecord(manifest: ImplementationManifest, now = new Dat
       repository,
       license: manifest.license,
       compatibility: { protocolPackage: manifest.protocol.package, protocolVersion: manifest.protocol.range },
-      distribution: { url: manifest.artifact.url, format: "esm", ...(manifest.artifact.integrity ? { integrity: manifest.artifact.integrity } : {}) },
+      distribution: {
+        url: manifest.artifact.url,
+        format: "esm",
+        ...(manifest.artifact.integrity ? { integrity: manifest.artifact.integrity } : {}),
+        ...(manifest.artifact.mirrors ? { mirrors: manifest.artifact.mirrors } : {}),
+      },
+      ...(manifest.releaseNotesUrl ? { releaseNotesUrl: manifest.releaseNotesUrl } : {}),
+      ...(manifest.publishedAt ? { publishedAt: manifest.publishedAt } : {}),
       capabilities: [...(manifest.capabilities ?? [])].sort(),
       permissions: [...(manifest.permissions ?? [])].sort(),
       tags: [...(manifest.tags ?? [])].sort(),
@@ -79,7 +94,14 @@ export function buildStoreRecord(manifest: ImplementationManifest, now = new Dat
     version: manifest.version,
     protocolVersion: manifest.protocol.range,
     capabilities: [...(manifest.capabilities ?? [])].sort(),
-    artifact: { url: manifest.artifact.url, format: "esm", ...(manifest.artifact.integrity ? { integrity: manifest.artifact.integrity } : {}) },
+    artifact: {
+      url: manifest.artifact.url,
+      format: "esm",
+      ...(manifest.artifact.integrity ? { integrity: manifest.artifact.integrity } : {}),
+      ...(manifest.artifact.mirrors ? { mirrors: manifest.artifact.mirrors } : {}),
+    },
+    ...(manifest.releaseNotesUrl ? { releaseNotesUrl: manifest.releaseNotesUrl } : {}),
+    ...(manifest.publishedAt ? { publishedAt: manifest.publishedAt } : {}),
     ...(manifest.permissions ? { permissions: manifest.permissions } : {}),
     tags: [...(manifest.tags ?? [])].sort(),
     status: "active",

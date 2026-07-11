@@ -1,7 +1,7 @@
 # OpenSpec: DancingMusic CLI
 
 - Spec-ID: `dancingmusic-cli-openspec`
-- Version: `1.1.0`
+- Version: `1.2.0`
 - Status: `Active`
 - Last-Updated: `2026-07-12`
 
@@ -22,6 +22,11 @@ implementation code.
    write one registry record and open a pull request.
 6. Store credentials in the operating-system credential store when available;
    never log or write a token to project files.
+
+An implementation may declare international/domestic artifact mirrors,
+`releaseNotesUrl` and `publishedAt`. The primary immutable `artifact.url`
+remains required for v1 compatibility. Mirrors MUST identify their region and
+must represent the exact same bytes covered by the shared integrity value.
 
 ## Store routing
 
@@ -65,6 +70,10 @@ DancingMusic host without publishing a release or Store record.
 The Dev Bridge is a local development transport. It does not load the artifact,
 access provider credentials, mutate host playback, submit to a Store or grant a
 plugin/connector additional permissions.
+
+Every Dev Bridge update is test-only. The host MUST present injected plugins
+and connectors with a visible testing marker, keep them session-only and never
+write them into the formal installed-record or Store submission state.
 
 ## MUST
 

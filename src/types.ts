@@ -11,7 +11,13 @@ export interface ImplementationManifest {
   repository: string;
   license: { name: string; url: string; commercialUse?: boolean };
   protocol: { package: string; range: string };
-  artifact: { url: string; integrity?: string };
+  artifact: {
+    url: string;
+    integrity?: string;
+    mirrors?: Array<{ region: "global" | "china"; url: string }>;
+  };
+  releaseNotesUrl?: string;
+  publishedAt?: string;
   capabilities?: string[];
   permissions?: string[] | { networkOrigins?: string[]; account?: boolean };
   tags?: string[];
