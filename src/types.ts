@@ -1,0 +1,24 @@
+export type ProjectKind = "plugin" | "connector";
+
+export interface ImplementationManifest {
+  schemaVersion: 1;
+  kind: ProjectKind;
+  id: string;
+  name: string;
+  summary: string;
+  version: string;
+  publisher: { name: string; url: string };
+  repository: string;
+  license: { name: string; url: string; commercialUse?: boolean };
+  protocol: { package: string; range: string };
+  artifact: { url: string; integrity?: string };
+  capabilities?: string[];
+  permissions?: string[] | { networkOrigins?: string[]; account?: boolean };
+  tags?: string[];
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  manifest?: ImplementationManifest;
+}

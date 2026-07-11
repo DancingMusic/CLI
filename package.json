@@ -1,0 +1,39 @@
+{
+  "name": "@dancingmusic/cli",
+  "version": "0.1.0",
+  "description": "Create, validate and submit DancingMusic plugins and connectors without requiring GitHub CLI.",
+  "type": "module",
+  "bin": {
+    "dancingmusic": "dist/cli.js",
+    "dmusic": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "commander": "^14.0.0"
+  },
+  "optionalDependencies": {
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.0.0"
+  }
+}
