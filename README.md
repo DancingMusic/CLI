@@ -46,6 +46,7 @@ Each implementation owns a `dancingmusic.json` file:
 dancingmusic validate
 dancingmusic manifest
 dancingmusic doctor
+dancingmusic dev --watch --build
 dancingmusic auth login
 dancingmusic submit --dry-run
 ```
@@ -59,3 +60,53 @@ credential store when the optional `keytar` package is available.
 one normalized registry record on a submission branch and opens a pull request.
 It never puts a token in a Git remote URL and never uploads implementation
 source into a Store.
+
+## Local Dev Bridge
+
+Run the bridge from a plugin or connector repository containing a valid
+`dancingmusic.json`:
+
+```bash
+# Serve dist/index.js on 127.0.0.1:17373
+dancingmusic dev
+
+# Build first, then rebuild and notify the host when project files change
+dancingmusic dev --watch --build
+
+# Select another in-project artifact or an available loopback port
+dancingmusic dev --artifact dist/plugin.js --port 0
+```
+
+The bridge exposes `GET /artifact`, `GET /manifest`, `GET /health` and the
+`ws://127.0.0.1:17373/events` WebSocket endpoint. It validates the manifest
+before listening, disables HTTP caches, serves only the selected artifact and
+rejects traversal or symlinks outside the project. It never imports or executes
+the implementation bundle.
+
+Set `VITE_DANCINGMUSIC_DEV_BRIDGE=1` when starting a compatible DancingMusic
+host. The host receives a versioned `implementation:update` event on connection
+and after each successful watched change/rebuild. The bridge is intentionally
+loopback-only and has no option to expose it to the LAN.
+
+### Test with an installed desktop Release
+
+A compatible installed DancingMusic desktop Release can use the same bridge in
+its explicit local test/developer mode. Start `dancingmusic dev`, then launch
+the desktop Release with:
+
+```bash
+# macOS
+open -a DancingMusic --args --enable-local-dev-bridge
+
+# Windows / Linux executable
+DancingMusic --enable-local-dev-bridge
+```
+
+Use `--local-dev-bridge-url=ws://127.0.0.1:PORT` when the CLI uses another
+port. The desktop host reloads the implementation from the loopback
+`bundleUrl`. The hosted Web Release does not support local implementation
+injection.
+
+This mode always requires a user opt-in. It does not make the Release listen on
+the network, does not expose the bridge beyond loopback and does not weaken
+normal Store installation or permission review.

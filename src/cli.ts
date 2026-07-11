@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { buildStoreRecord, validateManifest } from "./manifest.js";
 import { deleteToken, readToken, saveToken } from "./credentials.js";
 import { pollDeviceFlow, startDeviceFlow, storeRepository, submitStoreRecord } from "./github.js";
+import { startDevBridge } from "./dev.js";
 
 const program = new Command()
   .name("dancingmusic")
@@ -55,6 +56,29 @@ program.command("doctor").action(async () => {
   if (result.manifest) console.log(`Store: DancingMusic/${storeRepository(result.manifest)}`);
   if (!result.valid) process.exitCode = 1;
 });
+
+program.command("dev")
+  .description("serve a local implementation artifact to the DancingMusic host")
+  .option("--artifact <path>", "artifact path inside the project", "dist/index.js")
+  .option("--port <number>", "loopback port", "17373")
+  .option("--watch", "watch project files and notify connected hosts")
+  .option("--build", "run the local build script initially and on watched changes")
+  .action(async ({ artifact, port, watch, build }) => {
+    const parsedPort = Number(port);
+    if (!Number.isInteger(parsedPort) || parsedPort < 0 || parsedPort > 65535) {
+      throw new Error("--port must be an integer between 0 and 65535");
+    }
+    const bridge = await startDevBridge({ artifact, port: parsedPort, watch, build });
+    console.log(`Dev Bridge: ${bridge.url}`);
+    console.log(`Artifact: ${bridge.url}/artifact`);
+    console.log(`Events: ws://127.0.0.1:${bridge.port}/events`);
+    const shutdown = async () => {
+      await bridge.close();
+      process.exitCode = 0;
+    };
+    process.once("SIGINT", shutdown);
+    process.once("SIGTERM", shutdown);
+  });
 
 program.command("submit")
   .description("validate and prepare a Store pull request")
