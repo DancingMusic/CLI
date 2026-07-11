@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dancingmusic.github.io/schemas/implementation-v1.json",
+  "$id": "https://raw.githubusercontent.com/DancingMusic/CLI/main/schemas/implementation-v1.schema.json",
   "title": "DancingMusic implementation manifest",
   "type": "object",
   "additionalProperties": false,

@@ -7,7 +7,7 @@ to `DancingStore` or `MusicStore` without requiring GitHub CLI.
 ## Install
 
 ```bash
-npm install --global @dancingmusic/cli
+npm install --global github:DancingMusic/CLI#<verified-commit>
 ```
 
 ## Manifest
@@ -16,7 +16,7 @@ Each implementation owns a `dancingmusic.json` file:
 
 ```json
 {
-  "$schema": "https://dancingmusic.github.io/schemas/implementation-v1.json",
+  "$schema": "https://raw.githubusercontent.com/DancingMusic/CLI/main/schemas/implementation-v1.schema.json",
   "schemaVersion": 1,
   "kind": "plugin",
   "id": "example-plugin",
