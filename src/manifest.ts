@@ -6,6 +6,17 @@ import type { ImplementationManifest, ValidationResult } from "./types.js";
 
 const schemaUrl = new URL("../schemas/implementation-v1.schema.json", import.meta.url);
 
+function artifactUrlPinsVersion(rawUrl: string, version: string): boolean {
+  try {
+    const url = new URL(rawUrl);
+    const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:@|/)(?:v)?${escapedVersion}(?:/|$)`, "i").test(url.pathname)
+      && !/(?:@|\/)(?:main|master|head|latest)(?:\/|$)/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 export async function loadManifest(cwd = process.cwd()): Promise<unknown> {
   return JSON.parse(await readFile(resolve(cwd, "dancingmusic.json"), "utf8"));
 }
@@ -29,12 +40,12 @@ export async function validateManifest(cwd = process.cwd()): Promise<ValidationR
     const errors = typed.protocol.package === expectedPackage
       ? []
       : [`protocol.package must be ${expectedPackage} for ${typed.kind} projects`];
-    if (/(?:@|\/)(?:main|master|latest)(?:\/|$)/i.test(typed.artifact.url)) {
-      errors.push("artifact.url must reference an immutable version, not main/master/latest");
+    if (!artifactUrlPinsVersion(typed.artifact.url, typed.version)) {
+      errors.push("artifact.url must pin the manifest version in its path");
     }
     for (const mirror of typed.artifact.mirrors ?? []) {
-      if (/(?:@|\/)(?:main|master|latest)(?:\/|$)/i.test(mirror.url)) {
-        errors.push(`artifact mirror (${mirror.region}) must reference an immutable version`);
+      if (!artifactUrlPinsVersion(mirror.url, typed.version)) {
+        errors.push(`artifact mirror (${mirror.region}) must pin the manifest version in its path`);
       }
     }
     if ((typed.artifact.mirrors?.length ?? 0) > 0 && !typed.artifact.integrity) {

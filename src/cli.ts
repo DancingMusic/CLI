@@ -9,7 +9,7 @@ import { startDevBridge } from "./dev.js";
 const program = new Command()
   .name("dancingmusic")
   .description("DancingMusic implementation developer CLI")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program.command("validate")
   .option("--json", "emit machine-readable output")
