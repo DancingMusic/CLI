@@ -25,6 +25,9 @@ async function fixture(kind: "plugin" | "connector" = "plugin") {
     protocol: { package: kind === "plugin" ? "@dancingmusic/plugin-sdk" : "@dancingmusic/music-connect", range: "^1.0.0" },
     artifact: { url: "https://example.com/releases/v1.2.3/index.js" },
     capabilities: [],
+    ...(kind === "connector" ? {
+      connector: { familyId: "example", variant: "anonymous", authRequirement: "none", platforms: ["web", "desktop"] },
+    } : {}),
   }));
   return root;
 }

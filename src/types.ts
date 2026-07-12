@@ -20,6 +20,12 @@ export interface ImplementationManifest {
   publishedAt?: string;
   capabilities?: string[];
   permissions?: string[] | { networkOrigins?: string[]; account?: boolean };
+  connector?: {
+    familyId: string;
+    variant: "anonymous" | "account" | "hybrid";
+    authRequirement: "none" | "optional" | "required";
+    platforms: Array<"web" | "desktop">;
+  };
   tags?: string[];
 }
 

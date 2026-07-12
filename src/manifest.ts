@@ -40,6 +40,24 @@ export async function validateManifest(cwd = process.cwd()): Promise<ValidationR
     if ((typed.artifact.mirrors?.length ?? 0) > 0 && !typed.artifact.integrity) {
       errors.push("artifact.integrity is required when mirrors are declared");
     }
+    if (typed.kind === "connector") {
+      const connector = typed.connector;
+      const capabilities = typed.capabilities ?? [];
+      const hasLogin = capabilities.includes("login");
+      const accountPermission = !Array.isArray(typed.permissions) && typed.permissions?.account === true;
+      if (!connector) errors.push("connector metadata is required for connector projects");
+      else {
+        if (connector.variant === "anonymous" && (connector.authRequirement !== "none" || hasLogin)) {
+          errors.push("anonymous connector variants require authRequirement none and no login capability");
+        }
+        if (connector.variant === "account" && (connector.authRequirement !== "required" || !hasLogin || !accountPermission)) {
+          errors.push("account connector variants require required auth, login capability, and permissions.account");
+        }
+        if ((connector.authRequirement === "optional" || connector.authRequirement === "required") && !hasLogin) {
+          errors.push("optional or required connector auth needs the login capability");
+        }
+      }
+    }
     return { valid: errors.length === 0, errors, manifest: typed };
   } catch (error) {
     return { valid: false, errors: [error instanceof Error ? error.message : String(error)] };
@@ -83,9 +101,14 @@ export function buildStoreRecord(manifest: ImplementationManifest, now = new Dat
     };
   }
   if (Array.isArray(manifest.permissions)) throw new Error("connector permissions must be an object");
+  if (!manifest.artifact.integrity) throw new Error("connector artifacts require integrity before Store submission");
   return {
     schemaVersion: 1,
     id: manifest.id,
+    familyId: manifest.connector!.familyId,
+    variant: manifest.connector!.variant,
+    authRequirement: manifest.connector!.authRequirement,
+    platforms: manifest.connector!.platforms,
     name: manifest.name,
     description: manifest.summary,
     publisher: manifest.publisher,

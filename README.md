@@ -40,6 +40,30 @@ Each implementation owns a `dancingmusic.json` file:
 }
 ```
 
+连接器还必须声明平台家族与匿名/账号变体，并为不可变发布物提供 SHA-256 SRI：
+
+```json
+{
+  "kind": "connector",
+  "id": "example-music",
+  "connector": {
+    "familyId": "example-music",
+    "variant": "anonymous",
+    "authRequirement": "none",
+    "platforms": ["web", "desktop"]
+  },
+  "protocol": { "package": "@dancingmusic/music-connect", "range": ">=0.2.0" },
+  "artifact": {
+    "url": "https://cdn.jsdelivr.net/gh/example/MusicConnect-Example@v1.0.0/dist/index.js",
+    "integrity": "sha256-BASE64_SHA256_OF_DIST"
+  },
+  "capabilities": ["search", "stream"],
+  "permissions": { "networkOrigins": [], "account": false }
+}
+```
+
+匿名和账号能力应使用不同实现仓库/ID。匿名变体禁止 `login`；账号变体必须声明 `login`、`authRequirement: required` 和 `permissions.account: true`。
+
 ## Commands
 
 ```bash
