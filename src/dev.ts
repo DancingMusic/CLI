@@ -211,6 +211,10 @@ export async function startDevBridge(options: DevBridgeOptions = {}): Promise<De
         return Boolean(options.build && (path === generatedRoot || isInside(generatedRoot, path)));
       },
     });
+    await new Promise<void>((resolvePromise, reject) => {
+      watcher!.once("ready", resolvePromise);
+      watcher!.once("error", reject);
+    });
     watcher.on("all", (_event, filename) => {
       if (!filename) return;
       clearTimeout(timer);
