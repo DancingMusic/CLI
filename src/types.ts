@@ -19,7 +19,7 @@ export interface ImplementationManifest {
   releaseNotesUrl?: string;
   publishedAt?: string;
   capabilities?: string[];
-  permissions?: string[] | { networkOrigins?: string[]; account?: boolean };
+  permissions?: string[] | { networkOrigins?: string[]; artworkOrigins?: string[]; account?: boolean };
   connector?: {
     familyId: string;
     variant: "anonymous" | "account" | "hybrid";

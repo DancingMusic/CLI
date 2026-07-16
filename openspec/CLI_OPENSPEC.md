@@ -47,7 +47,9 @@ DancingMusic host without publishing a release or Store record.
    disables caching and enables local CORS. Other filesystem paths are never
    mapped to HTTP routes.
 4. `GET /manifest` returns the validated manifest. `GET /health` reports bridge
-   identity, kind and artifact revision. All JSON responses disable caching.
+   identity, kind, artifact revision, connected-host count, current sequence,
+   artifact request count and the last broadcast/artifact-request timestamps.
+   All JSON responses disable caching.
 5. WebSocket clients connect at `/events`. On connection and after every
    successful rebuild/change the bridge sends
    `{ protocolVersion: 1, type: "implementation:update", kind, id, version,
@@ -74,6 +76,12 @@ plugin/connector additional permissions.
 Every Dev Bridge update is test-only. The host MUST present injected plugins
 and connectors with a visible testing marker, keep them session-only and never
 write them into the formal installed-record or Store submission state.
+
+The WebSocket endpoint is `/events`. CLI terminal output MUST report host
+connect/disconnect, artifact requests and broadcasts without printing provider
+credentials, connector config, query text or artifact contents. These signals
+prove transport activity; a host-side load success/failure message remains the
+authority for whether the implementation initialized successfully.
 
 ## MUST
 

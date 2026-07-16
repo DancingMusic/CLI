@@ -86,6 +86,7 @@
           "additionalProperties": false,
           "properties": {
             "networkOrigins": { "type": "array", "items": { "type": "string", "pattern": "^https://" }, "uniqueItems": true },
+            "artworkOrigins": { "type": "array", "items": { "type": "string", "pattern": "^https://(?![^/?#]*@)[^/?#]+$" }, "uniqueItems": true },
             "account": { "type": "boolean" }
           }
         }

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildStoreRecord } from "../src/manifest.js";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildStoreRecord, validateManifest } from "../src/manifest.js";
 
 describe("buildStoreRecord", () => {
   it("normalizes repository and capabilities", () => {
@@ -51,5 +54,41 @@ describe("buildStoreRecord", () => {
       capabilities: ["search"],
       connector: { familyId: "example", variant: "anonymous", authRequirement: "none", platforms: ["web"] },
     })).toThrow("require integrity");
+  });
+});
+
+describe("validateManifest", () => {
+  it("accepts connector artwork origins and rejects paths or embedded credentials", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dancingmusic-cli-manifest-"));
+    const base = {
+      schemaVersion: 1,
+      kind: "connector",
+      id: "example",
+      name: "Example",
+      summary: "Example connector",
+      version: "1.0.0",
+      publisher: { name: "Example", url: "https://example.com" },
+      repository: "https://github.com/example/MusicConnect-Example",
+      license: { name: "MIT", url: "https://example.com/license" },
+      protocol: { package: "@dancingmusic/music-connect", range: ">=0.2.0" },
+      artifact: { url: "https://example.com/releases/v1.0.0/index.js", integrity: `sha256-${"A".repeat(43)}=` },
+      capabilities: [],
+      connector: { familyId: "example", variant: "anonymous", authRequirement: "none", platforms: ["desktop"] },
+    };
+    try {
+      await writeFile(join(root, "dancingmusic.json"), JSON.stringify({
+        ...base,
+        permissions: { artworkOrigins: ["https://images.example.com"] },
+      }));
+      expect((await validateManifest(root)).valid).toBe(true);
+
+      await writeFile(join(root, "dancingmusic.json"), JSON.stringify({
+        ...base,
+        permissions: { artworkOrigins: ["https://user:secret@images.example.com/path"] },
+      }));
+      expect((await validateManifest(root)).valid).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

@@ -113,6 +113,9 @@ export async function startDevBridge(options: DevBridgeOptions = {}): Promise<De
   let sequence = 0;
   let revision = 1;
   let actualPort = 0;
+  let artifactRequests = 0;
+  let lastBroadcastAt: string | undefined;
+  let lastArtifactRequestAt: string | undefined;
   const artifactUrl = () => `http://127.0.0.1:${actualPort}/artifact`;
   const event = (): DevEvent => ({
     protocolVersion: 1,
@@ -124,20 +127,35 @@ export async function startDevBridge(options: DevBridgeOptions = {}): Promise<De
     bundleUrl: artifactUrl(),
   });
   const broadcast = (value: DevEvent) => {
+    lastBroadcastAt = new Date().toISOString();
     const frame = websocketFrame(JSON.stringify(value));
     for (const socket of clients) {
       if (socket.destroyed || !socket.writable) clients.delete(socket);
       else socket.write(frame);
     }
+    console.log(`[dev-bridge] broadcast ${value.kind}:${value.id}@${value.version} sequence=${value.sequence} clients=${clients.size}`);
   };
 
   const server: Server = createServer(async (request, response) => {
     response.setHeader("access-control-allow-origin", "*");
     if (request.method !== "GET") return jsonResponse(response, 405, { error: "method_not_allowed" });
     const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
-    if (pathname === "/health") return jsonResponse(response, 200, { ok: true, protocolVersion: 1, kind: manifest.kind, id: manifest.id, revision });
+    if (pathname === "/health") return jsonResponse(response, 200, {
+      ok: true,
+      protocolVersion: 1,
+      kind: manifest.kind,
+      id: manifest.id,
+      revision,
+      sequence,
+      connectedClients: clients.size,
+      artifactRequests,
+      lastBroadcastAt,
+      lastArtifactRequestAt,
+    });
     if (pathname === "/manifest") return jsonResponse(response, 200, manifest);
     if (pathname !== "/artifact") return jsonResponse(response, 404, { error: "not_found" });
+    artifactRequests += 1;
+    lastArtifactRequestAt = new Date().toISOString();
     try {
       const artifact = await safeArtifact(projectRoot, artifactInput);
       const body = await readFile(artifact);
@@ -151,6 +169,7 @@ export async function startDevBridge(options: DevBridgeOptions = {}): Promise<De
         "x-content-type-options": "nosniff",
       });
       response.end(body);
+      console.log(`[dev-bridge] artifact request count=${artifactRequests} bytes=${body.length}`);
     } catch (error) {
       jsonResponse(response, 404, { error: "artifact_unavailable", message: error instanceof Error ? error.message : String(error) });
     }
@@ -166,8 +185,14 @@ export async function startDevBridge(options: DevBridgeOptions = {}): Promise<De
     const accept = createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
     socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`);
     clients.add(socket);
-    socket.write(websocketFrame(JSON.stringify(event())));
-    const remove = () => clients.delete(socket);
+    const initialEvent = event();
+    lastBroadcastAt = new Date().toISOString();
+    socket.write(websocketFrame(JSON.stringify(initialEvent)));
+    console.log(`[dev-bridge] host connected clients=${clients.size} sequence=${initialEvent.sequence}`);
+    const remove = () => {
+      const removed = clients.delete(socket);
+      if (removed) console.log(`[dev-bridge] host disconnected clients=${clients.size}`);
+    };
     socket.on("close", remove);
     socket.on("error", remove);
   });

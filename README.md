@@ -102,7 +102,9 @@ dancingmusic dev --artifact dist/plugin.js --port 0
 ```
 
 The bridge exposes `GET /artifact`, `GET /manifest`, `GET /health` and the
-`ws://127.0.0.1:17373/events` WebSocket endpoint. It validates the manifest
+`ws://127.0.0.1:17373/events` WebSocket endpoint. `/health` also reports the
+connected-host count, current sequence, artifact request count and last
+broadcast/request timestamps. It validates the manifest
 before listening, disables HTTP caches, serves only the selected artifact and
 rejects traversal or symlinks outside the project. It never imports or executes
 the implementation bundle.
@@ -120,16 +122,19 @@ the desktop Release with:
 
 ```bash
 # macOS
-open -a DancingMusic --args --enable-local-dev-bridge
+"/absolute/path/to/DancingMusic.app/Contents/MacOS/DancingMusic" --enable-local-dev-bridge
 
 # Windows / Linux executable
 DancingMusic --enable-local-dev-bridge
 ```
 
-Use `--local-dev-bridge-url=ws://127.0.0.1:PORT` when the CLI uses another
+Use `--local-dev-bridge-url=ws://127.0.0.1:PORT/events` when the CLI uses another
 port. The desktop host reloads the implementation from the loopback
 `bundleUrl`. The hosted Web Release does not support local implementation
 injection.
+
+Launch the concrete packaged binary on macOS instead of resolving by app name,
+so a stale copy in `/Applications` cannot silently become the test host.
 
 This mode always requires a user opt-in. It does not make the Release listen on
 the network, does not expose the bridge beyond loopback and does not weaken

@@ -39,10 +39,20 @@ describe("Dev Bridge", () => {
     const bridge = await startDevBridge({ cwd: await fixture(kind), port: 0 });
     try {
       expect(bridge.host).toBe("127.0.0.1");
+      expect(await (await fetch(`${bridge.url}/health`)).json()).toMatchObject({
+        ok: true,
+        connectedClients: 0,
+        artifactRequests: 0,
+        sequence: 0,
+      });
       const response = await fetch(`${bridge.url}/artifact`);
       expect(await response.text()).toBe("export default {};\n");
       expect(response.headers.get("cache-control")).toContain("no-store");
       expect(response.headers.get("access-control-allow-origin")).toBe("*");
+      expect(await (await fetch(`${bridge.url}/health`)).json()).toMatchObject({
+        connectedClients: 0,
+        artifactRequests: 1,
+      });
       expect((await fetch(`${bridge.url}/../../dancingmusic.json`)).status).toBe(404);
     } finally {
       await bridge.close();
@@ -92,6 +102,10 @@ describe("Dev Bridge", () => {
         version: "1.2.3",
         bundleUrl: `${bridge.url}/artifact`,
         sequence: 1,
+      });
+      expect(await (await fetch(`${bridge.url}/health`)).json()).toMatchObject({
+        sequence: 1,
+        connectedClients: 1,
       });
     } finally {
       await bridge.close();
